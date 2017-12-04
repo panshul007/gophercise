@@ -3,6 +3,7 @@ package views
 import (
 	"html/template"
 	"path/filepath"
+	"net/http"
 )
 
 var (
@@ -27,6 +28,11 @@ func NewView(layout string, files ...string) *View {
 type View struct {
 	Template *template.Template
 	Layout string
+}
+
+// Render is used to render the view with predefined layout
+func (v *View) Render(w http.ResponseWriter, data interface{}) error {
+	return v.Template.ExecuteTemplate(w, v.Layout, data)
 }
 
 func layoutFiles() []string {
