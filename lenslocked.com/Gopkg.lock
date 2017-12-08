@@ -13,9 +13,15 @@
   revision = "7f08801859139f86dfafd1c296e2cba9a80d292e"
   version = "v1.6.0"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/gorilla/schema"
+  packages = ["."]
+  revision = "e929b549226ae547f77be004b8ea83bbed858762"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "92634cf611edb480aa3db72a0823fbbcf1caf231fc8a87b646e9cd762433690f"
+  inputs-digest = "9f964287947020ab36e350440ef6b1255ccbd57bea1434fc6d332808b680e749"
   solver-name = "gps-cdcl"
   solver-version = 1
