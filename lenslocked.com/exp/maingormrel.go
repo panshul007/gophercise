@@ -8,12 +8,12 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-const (
-	host   = "localhost"
-	port   = 5432
-	user   = "postgres"
-	dbname = "lenslocked_dev"
-)
+//const (
+//	host   = "localhost"
+//	port   = 5432
+//	user   = "postgres"
+//	dbname = "lenslocked_dev"
+//)
 
 type User struct {
 	gorm.Model
