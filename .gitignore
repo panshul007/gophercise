@@ -16,3 +16,6 @@
 # intellij file
 .idea/
 *.iml
+
+# dep dependency files
+lenslocked.com/vendor
