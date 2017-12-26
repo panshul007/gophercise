@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	host = "localhost"
-	port = 5432
-	user = "postgres"
+	host   = "localhost"
+	port   = 5432
+	user   = "postgres"
 	dbname = "lenslocked_dev"
 )
 
