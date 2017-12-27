@@ -66,3 +66,9 @@ func (us *UserService) ByID(id uint) (*User, error) {
 func (us *UserService) Create(user *User) error {
 	return us.db.Create(user).Error
 }
+
+// Update will update the provided the user with all of the data
+// provided in the user object.
+func (us *UserService) Update(user *User) error {
+	return us.db.Save(user).Error
+}
