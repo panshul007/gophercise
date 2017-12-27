@@ -60,3 +60,9 @@ func (us *UserService) ByID(id uint) (*User, error) {
 		return nil, err
 	}
 }
+
+// Create will create the provided user and backfill data
+// like ID, CreatedAt, etc.
+func (us *UserService) Create(user *User) error {
+	return us.db.Create(user).Error
+}
