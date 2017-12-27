@@ -33,9 +33,9 @@ func main() {
 	if err := us.Update(&user); err != nil {
 		panic(err)
 	}
-	userById, err := us.ByID(user.ID)
+	userByEmail, err := us.ByEmail("michael@paperco.io")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(userById)
+	fmt.Printf("%v\n", *userByEmail)
 }

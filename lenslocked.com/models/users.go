@@ -8,7 +8,8 @@ import (
 
 var (
 	// ErrNotFound Error returned when resource not found.
-	ErrNotFound = errors.New("models: resource not found")
+	ErrNotFound  = errors.New("models: resource not found")
+	ErrInvalidId = errors.New("models: ID provided was invalid")
 )
 
 type User struct {
@@ -50,15 +51,17 @@ func (us *UserService) DestructiveReset() {
 // 3 - nil, otherError
 func (us *UserService) ByID(id uint) (*User, error) {
 	var user User
-	err := us.db.Where("id = ?", id).First(&user).Error
-	switch err {
-	case nil:
-		return &user, nil
-	case gorm.ErrRecordNotFound:
-		return nil, ErrNotFound
-	default:
-		return nil, err
-	}
+	db := us.db.Where("id = ?", id)
+	err := first(db, &user)
+	return &user, err
+}
+
+// ByEmail will fetch the user by provided email.
+func (us *UserService) ByEmail(email string) (*User, error) {
+	var user User
+	db := us.db.Where("email = ?", email)
+	err := first(db, &user)
+	return &user, err
 }
 
 // Create will create the provided user and backfill data
@@ -71,4 +74,23 @@ func (us *UserService) Create(user *User) error {
 // provided in the user object.
 func (us *UserService) Update(user *User) error {
 	return us.db.Save(user).Error
+}
+
+// Delete will delete the user with provided user Id.
+func (us *UserService) Delete(id uint) error {
+	if id == 0 {
+		return ErrInvalidId
+	}
+	user := User{Model: gorm.Model{ID: id}}
+	return us.db.Delete(&user).Error
+}
+
+// first will fetch the first record by the provided gorm db condition
+// and place it in the dst object.
+func first(db *gorm.DB, dst interface{}) error {
+	err := db.First(dst).Error
+	if err == gorm.ErrRecordNotFound {
+		return ErrNotFound
+	}
+	return err
 }
