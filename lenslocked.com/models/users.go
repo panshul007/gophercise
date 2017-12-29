@@ -85,8 +85,10 @@ func (uv *userValidator) Update(user *User) error {
 
 // Delete will delete the user with provided user Id.
 func (uv *userValidator) Delete(id uint) error {
-	if id == 0 {
-		return ErrInvalidId
+	var user User
+	user.ID = id
+	if err := runUserValFuncs(&user, uv.idGreaterThan(0)); err != nil {
+		return err
 	}
 	return uv.UserDB.Delete(id)
 }
@@ -124,6 +126,16 @@ func (uv *userValidator) setRememberIfUnset(user *User) error {
 	}
 	user.Remember = token
 	return nil
+}
+
+// idGreaterThan returns function of type userValFunc that accepts a user object and returns an error
+func (uv *userValidator) idGreaterThan(n uint) userValFunc {
+	return userValFunc(func(user *User) error {
+		if user.ID <= n {
+			return ErrInvalidId
+		}
+		return nil
+	})
 }
 
 // UserService is a set of methods used to manipulate and work with
