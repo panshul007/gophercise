@@ -29,25 +29,6 @@ type User struct {
 	RememberHash string `gorm:"not null;unique_index"`
 }
 
-type userService struct {
-	UserDB
-}
-
-type userGorm struct {
-	db   *gorm.DB
-	hmac hash.HMAC
-}
-
-type userValidator struct {
-	UserDB
-}
-
-// To ensure that userGorm is implementing UserDB interface
-// if at any point if this is not true, we will get a compilation error.
-var _ UserDB = &userGorm{}
-
-var _ UserDB = &userValidator{}
-
 type UserDB interface {
 	// Single user fetch methods
 	ByID(id uint) (*User, error)
@@ -67,6 +48,69 @@ type UserDB interface {
 	DestructiveReset() error
 }
 
+type userValidator struct {
+	UserDB
+	hmac hash.HMAC
+}
+
+var _ UserDB = &userValidator{}
+
+func (uv *userValidator) ByRemember(token string) (*User, error) {
+	rememberHash := uv.hmac.Hash(token)
+	return uv.UserDB.ByRemember(rememberHash)
+}
+
+func (uv *userValidator) Create(user *User) error {
+	if err := runUserValFuncs(user, uv.bcryptPassword); err != nil {
+		return err
+	}
+
+	if user.Remember == "" {
+		token, err := rand.RemeberToken()
+		if err != nil {
+			return err
+		}
+		user.Remember = token
+	}
+	user.RememberHash = uv.hmac.Hash(user.Remember)
+	return uv.UserDB.Create(user)
+}
+
+// Update will update the provided the user with all of the data
+// provided in the user object.
+func (uv *userValidator) Update(user *User) error {
+	if err := runUserValFuncs(user, uv.bcryptPassword); err != nil {
+		return err
+	}
+
+	if user.Remember != "" {
+		user.RememberHash = uv.hmac.Hash(user.Remember)
+	}
+	return uv.UserDB.Update(user)
+}
+
+// Delete will delete the user with provided user Id.
+func (uv *userValidator) Delete(id uint) error {
+	if id == 0 {
+		return ErrInvalidId
+	}
+	return uv.UserDB.Delete(id)
+}
+
+func (uv *userValidator) bcryptPassword(user *User) error {
+	if user.Password == "" {
+		return nil
+	}
+	pwByte := []byte(user.Password + userPwPepper)
+	hashedBytes, err := bcrypt.GenerateFromPassword(pwByte, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = string(hashedBytes)
+	user.Password = ""
+	return nil
+}
+
 // UserService is a set of methods used to manipulate and work with
 // the user model
 type UserService interface {
@@ -74,17 +118,8 @@ type UserService interface {
 	UserDB
 }
 
-func newUserGorm(connectionInfo string) (*userGorm, error) {
-	db, err := gorm.Open("postgres", connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-	db.LogMode(true)
-	hmac := hash.NewHMAC(hmacSecretKey)
-	return &userGorm{
-		db:   db,
-		hmac: hmac,
-	}, nil
+type userService struct {
+	UserDB
 }
 
 func NewUserService(connectionInfo string) (UserService, error) {
@@ -92,13 +127,15 @@ func NewUserService(connectionInfo string) (UserService, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	hmac := hash.NewHMAC(hmacSecretKey)
+	uv := &userValidator{
+		hmac:   hmac,
+		UserDB: ug,
+	}
 	// Returns an instance of UserService which calls its methods from UserDB which si actually an instance of
 	// userValidator, which in turn calls its methods of UserDB which is actually an instance of ug.
 	return &userService{
-		UserDB: &userValidator{
-			UserDB: ug,
-		},
+		UserDB: uv,
 	}, nil
 }
 
@@ -119,6 +156,25 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 		}
 	}
 	return foundUser, nil
+}
+
+type userGorm struct {
+	db *gorm.DB
+}
+
+// To ensure that userGorm is implementing UserDB interface
+// if at any point if this is not true, we will get a compilation error.
+var _ UserDB = &userGorm{}
+
+func newUserGorm(connectionInfo string) (*userGorm, error) {
+	db, err := gorm.Open("postgres", connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+	db.LogMode(true)
+	return &userGorm{
+		db: db,
+	}, nil
 }
 
 // Closes the user service database connection.
@@ -161,9 +217,8 @@ func (ug *userGorm) ByEmail(email string) (*User, error) {
 	return &user, err
 }
 
-func (ug *userGorm) ByRemember(token string) (*User, error) {
+func (ug *userGorm) ByRemember(rememberHash string) (*User, error) {
 	var user User
-	rememberHash := ug.hmac.Hash(token)
 	err := first(ug.db.Where("remember_hash = ?", rememberHash), &user)
 	if err != nil {
 		return nil, err
@@ -174,40 +229,17 @@ func (ug *userGorm) ByRemember(token string) (*User, error) {
 // Create will create the provided user and backfill data
 // like ID, CreatedAt, etc.
 func (ug *userGorm) Create(user *User) error {
-	pwByte := []byte(user.Password + userPwPepper)
-	hashedBytes, err := bcrypt.GenerateFromPassword(pwByte, bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	user.PasswordHash = string(hashedBytes)
-	user.Password = ""
-
-	if user.Remember == "" {
-		token, err := rand.RemeberToken()
-		if err != nil {
-			return err
-		}
-		user.Remember = token
-	}
-	user.RememberHash = ug.hmac.Hash(user.Remember)
-
 	return ug.db.Create(user).Error
 }
 
 // Update will update the provided the user with all of the data
 // provided in the user object.
 func (ug *userGorm) Update(user *User) error {
-	if user.Remember != "" {
-		user.RememberHash = ug.hmac.Hash(user.Remember)
-	}
 	return ug.db.Save(user).Error
 }
 
 // Delete will delete the user with provided user Id.
 func (ug *userGorm) Delete(id uint) error {
-	if id == 0 {
-		return ErrInvalidId
-	}
 	user := User{Model: gorm.Model{ID: id}}
 	return ug.db.Delete(&user).Error
 }
@@ -220,4 +252,17 @@ func first(db *gorm.DB, dst interface{}) error {
 		return ErrNotFound
 	}
 	return err
+}
+
+type userValFunc func(*User) error
+
+//  Iterating over all provided validation functions of the type userValFuncs and
+// running them on the provided user object.
+func runUserValFuncs(user *User, fns ...userValFunc) error {
+	for _, fn := range fns {
+		if err := fn(user); err != nil {
+			return err
+		}
+	}
+	return nil
 }
