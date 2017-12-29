@@ -29,7 +29,7 @@ type User struct {
 	RememberHash string `gorm:"not null;unique_index"`
 }
 
-type UserService struct {
+type userService struct {
 	UserDB
 }
 
@@ -46,18 +46,7 @@ type userValidator struct {
 // if at any point if this is not true, we will get a compilation error.
 var _ UserDB = &userGorm{}
 
-func newUserGorm(connectionInfo string) (*userGorm, error) {
-	db, err := gorm.Open("postgres", connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-	db.LogMode(true)
-	hmac := hash.NewHMAC(hmacSecretKey)
-	return &userGorm{
-		db:   db,
-		hmac: hmac,
-	}, nil
-}
+var _ UserDB = &userValidator{}
 
 type UserDB interface {
 	// Single user fetch methods
@@ -78,7 +67,27 @@ type UserDB interface {
 	DestructiveReset() error
 }
 
-func NewUserService(connectionInfo string) (*UserService, error) {
+// UserService is a set of methods used to manipulate and work with
+// the user model
+type UserService interface {
+	Authenticate(email, password string) (*User, error)
+	UserDB
+}
+
+func newUserGorm(connectionInfo string) (*userGorm, error) {
+	db, err := gorm.Open("postgres", connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+	db.LogMode(true)
+	hmac := hash.NewHMAC(hmacSecretKey)
+	return &userGorm{
+		db:   db,
+		hmac: hmac,
+	}, nil
+}
+
+func NewUserService(connectionInfo string) (UserService, error) {
 	ug, err := newUserGorm(connectionInfo)
 	if err != nil {
 		return nil, err
@@ -86,11 +95,30 @@ func NewUserService(connectionInfo string) (*UserService, error) {
 
 	// Returns an instance of UserService which calls its methods from UserDB which si actually an instance of
 	// userValidator, which in turn calls its methods of UserDB which is actually an instance of ug.
-	return &UserService{
+	return &userService{
 		UserDB: &userValidator{
 			UserDB: ug,
 		},
 	}, nil
+}
+
+// Authenticate user with provided user email and password.
+func (us *userService) Authenticate(email, password string) (*User, error) {
+	foundUser, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return nil, ErrInvalidPassword
+		default:
+			return nil, err
+		}
+	}
+	return foundUser, nil
 }
 
 // Closes the user service database connection.
@@ -141,25 +169,6 @@ func (ug *userGorm) ByRemember(token string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
-}
-
-// Authenticate user with provided user email and password.
-func (us *UserService) Authenticate(email, password string) (*User, error) {
-	foundUser, err := us.ByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
-	if err != nil {
-		switch err {
-		case bcrypt.ErrMismatchedHashAndPassword:
-			return nil, ErrInvalidPassword
-		default:
-			return nil, err
-		}
-	}
-	return foundUser, nil
 }
 
 // Create will create the provided user and backfill data
