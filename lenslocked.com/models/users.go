@@ -66,15 +66,8 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 }
 
 func (uv *userValidator) Create(user *User) error {
-	if user.Remember == "" {
-		token, err := rand.RemeberToken()
-		if err != nil {
-			return err
-		}
-		user.Remember = token
-	}
 
-	if err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember); err != nil {
+	if err := runUserValFuncs(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember); err != nil {
 		return err
 	}
 
@@ -117,6 +110,19 @@ func (uv *userValidator) hmacRemember(user *User) error {
 		return nil
 	}
 	user.RememberHash = uv.hmac.Hash(user.Remember)
+	return nil
+}
+
+func (uv *userValidator) setRememberIfUnset(user *User) error {
+	if user.Remember != "" {
+		return nil
+	}
+
+	token, err := rand.RemeberToken()
+	if err != nil {
+		return err
+	}
+	user.Remember = token
 	return nil
 }
 
