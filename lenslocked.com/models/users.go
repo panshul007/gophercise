@@ -18,6 +18,7 @@ var (
 	ErrInvalidPassword = errors.New("models: incorrect password provided")
 	ErrEmailRequired   = errors.New("models: email address is required")
 	ErrEmailInvalid    = errors.New("models: email address is not valid")
+	ErrEmailTaken      = errors.New("models: email address is already taken")
 )
 
 const userPwPepper = "some-secret-random-string"
@@ -91,7 +92,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 
 func (uv *userValidator) Create(user *User) error {
 
-	if err := runUserValFuncs(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat); err != nil {
+	if err := runUserValFuncs(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvailable); err != nil {
 		return err
 	}
 
@@ -101,7 +102,7 @@ func (uv *userValidator) Create(user *User) error {
 // Update will update the provided the user with all of the data
 // provided in the user object.
 func (uv *userValidator) Update(user *User) error {
-	if err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.emailFormat); err != nil {
+	if err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.emailFormat, uv.emailIsAvailable); err != nil {
 		return err
 	}
 	return uv.UserDB.Update(user)
@@ -182,6 +183,24 @@ func (uv *userValidator) emailFormat(user *User) error {
 	return nil
 }
 
+func (uv *userValidator) emailIsAvailable(user *User) error {
+	existing, err := uv.ByEmail(user.Email)
+	if err == ErrNotFound {
+		// Email address is not taken
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	// we found a user with this email address
+	// if the found user has the same ID as this use, it is an update and this is the same user
+	if user.ID != existing.ID {
+		return ErrEmailTaken
+	}
+	return nil
+}
+
 // UserService is a set of methods used to manipulate and work with
 // the user model
 type UserService interface {
@@ -199,10 +218,7 @@ func NewUserService(connectionInfo string) (UserService, error) {
 		return nil, err
 	}
 	hmac := hash.NewHMAC(hmacSecretKey)
-	uv := &userValidator{
-		hmac:   hmac,
-		UserDB: ug,
-	}
+	uv := newUserValidator(ug, hmac)
 	// Returns an instance of UserService which calls its methods from UserDB which si actually an instance of
 	// userValidator, which in turn calls its methods of UserDB which is actually an instance of ug.
 	return &userService{
