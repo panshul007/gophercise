@@ -13,14 +13,16 @@ import (
 
 var (
 	// ErrNotFound Error returned when resource not found.
-	ErrNotFound          = errors.New("models: resource not found")
-	ErrIDInvalidId       = errors.New("models: ID provided was invalid")
-	ErrPasswordIncorrect = errors.New("models: incorrect password provided")
-	ErrEmailRequired     = errors.New("models: email address is required")
-	ErrEmailInvalid      = errors.New("models: email address is not valid")
-	ErrEmailTaken        = errors.New("models: email address is already taken")
-	ErrPasswordTooShort  = errors.New("models: password must be at least 8 characters log")
-	ErrPasswordRequired  = errors.New("models: password is required")
+	ErrNotFound              = errors.New("models: resource not found")
+	ErrIDInvalidId           = errors.New("models: ID provided was invalid")
+	ErrPasswordIncorrect     = errors.New("models: incorrect password provided")
+	ErrEmailRequired         = errors.New("models: email address is required")
+	ErrEmailInvalid          = errors.New("models: email address is not valid")
+	ErrEmailTaken            = errors.New("models: email address is already taken")
+	ErrPasswordTooShort      = errors.New("models: password must be at least 8 characters log")
+	ErrPasswordRequired      = errors.New("models: password is required")
+	ErrRememberTokenTooShort = errors.New("models: remember token should be at least 32 bytes")
+	ErrRememberTokenRequired = errors.New("models: remember token is required")
 )
 
 const userPwPepper = "some-secret-random-string"
@@ -95,8 +97,8 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 func (uv *userValidator) Create(user *User) error {
 
 	if err := runUserValFuncs(user, uv.passwordRequired, uv.passwordMinLength,
-		uv.bcryptPassword, uv.passwordHashRequired, uv.setRememberIfUnset, uv.hmacRemember,
-		uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvailable); err != nil {
+		uv.bcryptPassword, uv.passwordHashRequired, uv.setRememberIfUnset, uv.rememberMinBytes, uv.hmacRemember,
+		uv.rememberHashRequired, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvailable); err != nil {
 		return err
 	}
 
@@ -106,8 +108,8 @@ func (uv *userValidator) Create(user *User) error {
 // Update will update the provided the user with all of the data
 // provided in the user object.
 func (uv *userValidator) Update(user *User) error {
-	if err := runUserValFuncs(user, uv.passwordMinLength, uv.bcryptPassword, uv.passwordHashRequired, uv.hmacRemember,
-		uv.normalizeEmail, uv.emailFormat, uv.emailIsAvailable); err != nil {
+	if err := runUserValFuncs(user, uv.passwordMinLength, uv.bcryptPassword, uv.passwordHashRequired, uv.rememberMinBytes,
+		uv.hmacRemember, uv.rememberHashRequired, uv.normalizeEmail, uv.emailFormat, uv.emailIsAvailable); err != nil {
 		return err
 	}
 	return uv.UserDB.Update(user)
@@ -166,6 +168,27 @@ func (uv *userValidator) idGreaterThan(n uint) userValFunc {
 		}
 		return nil
 	})
+}
+
+func (uv *userValidator) rememberMinBytes(user *User) error {
+	if user.Remember == "" {
+		return nil
+	}
+	n, err := rand.NBytes(user.Remember)
+	if err != nil {
+		return err
+	}
+	if n < 32 {
+		return ErrRememberTokenTooShort
+	}
+	return nil
+}
+
+func (uv *userValidator) rememberHashRequired(user *User) error {
+	if user.RememberHash == "" {
+		return ErrRememberTokenRequired
+	}
+	return nil
 }
 
 func (uv *userValidator) normalizeEmail(user *User) error {
