@@ -2,12 +2,12 @@ package views
 
 import (
 	"html/template"
-	"path/filepath"
 	"net/http"
+	"path/filepath"
 )
 
 var (
-	LayoutDir string = "views/layouts/"
+	LayoutDir   string = "views/layouts/"
 	TemplateDir string = "views/"
 	TemplateExt string = ".gohtml"
 )
@@ -24,13 +24,13 @@ func NewView(layout string, files ...string) *View {
 
 	return &View{
 		Template: t,
-		Layout: layout,
+		Layout:   layout,
 	}
 }
 
 type View struct {
 	Template *template.Template
-	Layout string
+	Layout   string
 }
 
 func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func (v *View) Render(w http.ResponseWriter, data interface{}) error {
 }
 
 func layoutFiles() []string {
-	files, err := filepath.Glob(LayoutDir + "*" +TemplateExt)
+	files, err := filepath.Glob(LayoutDir + "*" + TemplateExt)
 	if err != nil {
 		panic(err)
 	}
@@ -57,13 +57,13 @@ func layoutFiles() []string {
 // representing file paths for templates, and it prepends
 // the TemplateDir directory to each string in the slice
 func addTemplatePath(files []string) {
-	for i,f := range files {
+	for i, f := range files {
 		files[i] = TemplateDir + f
 	}
 }
 
 func addTemplateExt(files []string) {
-	for i,f := range files {
+	for i, f := range files {
 		files[i] = f + TemplateExt
 	}
 }

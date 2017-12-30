@@ -31,7 +31,7 @@ func main() {
 	r := mux.NewRouter()
 	r.Handle("/", staticC.Home).Methods("GET")
 	r.Handle("/contact", staticC.Contact).Methods("GET")
-	r.Handle("/signup", usersC.NewView).Methods("GET")
+	r.HandleFunc("/signup", usersC.New).Methods("GET")
 	r.HandleFunc("/signup", usersC.Create).Methods("POST")
 	// Using Handle when an interface is passed which implements the ServeHTTP method
 	r.Handle("/login", usersC.LoginView).Methods("GET")
