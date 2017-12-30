@@ -5,6 +5,7 @@ import (
 	"gophercise/lenslocked.com/models"
 	"gophercise/lenslocked.com/rand"
 	"gophercise/lenslocked.com/views"
+	"log"
 	"net/http"
 )
 
@@ -31,14 +32,7 @@ type SignupForm struct {
 // This is used to render the form to signup new user accounts
 // GET /signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-
-	d := views.Data{
-		Alert: &views.Alert{
-			Level:   views.AlertLevelError,
-			Message: "something went wrong",
-		},
-	}
-	if err := u.NewView.Render(w, d); err != nil {
+	if err := u.NewView.Render(w, nil); err != nil {
 		panic(err)
 	}
 }
@@ -46,9 +40,16 @@ func (u *Users) New(w http.ResponseWriter, r *http.Request) {
 // This is used to process signup form for creating new user.
 // POST /signup
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
+	var vd views.Data
 	var form SignupForm
 	if err := parseForm(r, &form); err != nil {
-		panic(err)
+		log.Println(err)
+		vd.Alert = &views.Alert{
+			Level:   views.AlertLevelError,
+			Message: views.AlertMessageGeneric,
+		}
+		u.NewView.Render(w, vd)
+		return
 	}
 	user := models.User{
 		Name:     form.Name,
@@ -56,13 +57,17 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		Password: form.Password,
 	}
 	if err := u.us.Create(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		vd.Alert = &views.Alert{
+			Level:   views.AlertLevelError,
+			Message: err.Error(),
+		}
+		u.NewView.Render(w, vd)
 		return
 	}
 
 	err := u.signIn(w, &user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 	http.Redirect(w, r, "/cookietest", http.StatusFound)
