@@ -249,18 +249,15 @@ type userService struct {
 	UserDB
 }
 
-func NewUserService(connectionInfo string) (UserService, error) {
-	ug, err := newUserGorm(connectionInfo)
-	if err != nil {
-		return nil, err
-	}
+func NewUserService(db *gorm.DB) UserService {
+	ug := &userGorm{db}
 	hmac := hash.NewHMAC(hmacSecretKey)
 	uv := newUserValidator(ug, hmac)
 	// Returns an instance of UserService which calls its methods from UserDB which si actually an instance of
 	// userValidator, which in turn calls its methods of UserDB which is actually an instance of ug.
 	return &userService{
 		UserDB: uv,
-	}, nil
+	}
 }
 
 // Authenticate user with provided user email and password.
@@ -289,17 +286,6 @@ type userGorm struct {
 // To ensure that userGorm is implementing UserDB interface
 // if at any point if this is not true, we will get a compilation error.
 var _ UserDB = &userGorm{}
-
-func newUserGorm(connectionInfo string) (*userGorm, error) {
-	db, err := gorm.Open("postgres", connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-	db.LogMode(true)
-	return &userGorm{
-		db: db,
-	}, nil
-}
 
 // Closes the user service database connection.
 func (ug *userGorm) Close() error {
