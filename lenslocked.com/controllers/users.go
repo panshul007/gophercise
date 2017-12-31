@@ -132,5 +132,5 @@ func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	fmt.Fprintf(w, "+%v", user)
+	fmt.Fprintf(w, "%+v", user)
 }
