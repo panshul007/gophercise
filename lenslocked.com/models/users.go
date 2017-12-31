@@ -33,13 +33,6 @@ type UserDB interface {
 	Create(user *User) error
 	Update(user *User) error
 	Delete(id uint) error
-
-	// Close to close the DB connection
-	Close() error
-
-	// Migration helpers
-	AutoMigrate() error
-	DestructiveReset() error
 }
 
 type userValidator struct {
@@ -286,27 +279,6 @@ type userGorm struct {
 // To ensure that userGorm is implementing UserDB interface
 // if at any point if this is not true, we will get a compilation error.
 var _ UserDB = &userGorm{}
-
-// Closes the user service database connection.
-func (ug *userGorm) Close() error {
-	return ug.db.Close()
-}
-
-// DestructiveReset drops the user table and re creates it.
-func (ug *userGorm) DestructiveReset() error {
-	if err := ug.db.DropTableIfExists(&User{}).Error; err != nil {
-		return err
-	}
-	return ug.AutoMigrate()
-}
-
-// AutoMigrate will attempt to auto migrate the users table
-func (ug *userGorm) AutoMigrate() error {
-	if err := ug.db.AutoMigrate(&User{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
 
 // ByID will lookup user by id provided.
 // 1 - user, nil
