@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"golang.org/x/crypto/bcrypt"
@@ -9,20 +8,6 @@ import (
 	"gophercise/lenslocked.com/rand"
 	"regexp"
 	"strings"
-)
-
-var (
-	// ErrNotFound Error returned when resource not found.
-	ErrNotFound              = errors.New("models: resource not found")
-	ErrIDInvalidId           = errors.New("models: ID provided was invalid")
-	ErrPasswordIncorrect     = errors.New("models: incorrect password provided")
-	ErrEmailRequired         = errors.New("models: email address is required")
-	ErrEmailInvalid          = errors.New("models: email address is not valid")
-	ErrEmailTaken            = errors.New("models: email address is already taken")
-	ErrPasswordTooShort      = errors.New("models: password must be at least 8 characters log")
-	ErrPasswordRequired      = errors.New("models: password is required")
-	ErrRememberTokenTooShort = errors.New("models: remember token should be at least 32 bytes")
-	ErrRememberTokenRequired = errors.New("models: remember token is required")
 )
 
 const userPwPepper = "some-secret-random-string"
