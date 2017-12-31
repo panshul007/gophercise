@@ -1,7 +1,9 @@
 package views
 
 import (
+	"bytes"
 	"html/template"
+	"io"
 	"net/http"
 	"path/filepath"
 )
@@ -34,13 +36,11 @@ type View struct {
 }
 
 func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := v.Render(w, nil); err != nil {
-		panic(err)
-	}
+	v.Render(w, nil)
 }
 
 // Render is used to render the view with predefined layout
-func (v *View) Render(w http.ResponseWriter, data interface{}) error {
+func (v *View) Render(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "text/html")
 	switch data.(type) {
 	case Data:
@@ -50,7 +50,14 @@ func (v *View) Render(w http.ResponseWriter, data interface{}) error {
 			Yield: data,
 		}
 	}
-	return v.Template.ExecuteTemplate(w, v.Layout, data)
+	var buf bytes.Buffer
+	if err := v.Template.ExecuteTemplate(&buf, v.Layout, data); err != nil {
+		http.Error(w, AlertMessageGeneric, http.StatusInternalServerError)
+		return
+	}
+	// this throws an error, we really have no way to recover from this error, so it is not required here
+	// to check and handle the error. We will let it panic.
+	io.Copy(w, &buf)
 }
 
 func layoutFiles() []string {
