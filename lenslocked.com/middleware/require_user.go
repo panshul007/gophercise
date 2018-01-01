@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"gophercise/lenslocked.com/context"
 	"gophercise/lenslocked.com/models"
 )
 
@@ -26,6 +27,9 @@ func (mw *RequireUser) ApplyFn(next http.HandlerFunc) http.HandlerFunc {
 		if err != nil {
 			http.Redirect(w, r, "/login", http.StatusFound)
 		}
+		ctx := r.Context()
+		ctx = context.WithUser(ctx, user)
+		r = r.WithContext(ctx)
 		fmt.Println("User found: ", user)
 		next(w, r)
 	})
