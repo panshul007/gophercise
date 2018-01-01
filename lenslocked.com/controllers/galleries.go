@@ -39,6 +39,21 @@ type GalleryForm struct {
 	Title string `schema:"title"`
 }
 
+// GET /gallaries
+func (g *Galleries) Index(w http.ResponseWriter, r *http.Request) {
+
+	user := context.User(r.Context())
+	galleries, err := g.gs.ByUserID(user.ID)
+	if err != nil {
+		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+	}
+
+	var vd views.Data
+	vd.Yield = galleries
+	fmt.Fprintln(w, galleries)
+	//g.IndexView.Render(w, vd)
+}
+
 // GET /galleries/:id
 func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
