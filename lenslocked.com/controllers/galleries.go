@@ -2,10 +2,12 @@ package controllers
 
 import (
 	"fmt"
-	"gophercise/lenslocked.com/models"
-	"gophercise/lenslocked.com/views"
 	"log"
 	"net/http"
+
+	"gophercise/lenslocked.com/context"
+	"gophercise/lenslocked.com/models"
+	"gophercise/lenslocked.com/views"
 )
 
 func NewGalleries(gs models.GalleryService) *Galleries {
@@ -25,7 +27,7 @@ type GalleryForm struct {
 }
 
 // This is used to process signup form for creating new user.
-// POST /signup
+// POST /galleries
 func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 	var vd views.Data
 	var form GalleryForm
@@ -35,8 +37,16 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 		g.New.Render(w, vd)
 		return
 	}
+	user := context.User(r.Context())
+	// not required as done in middle ware.. but just for the learning sake.
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	log.Println("Create got the user:", user)
 	gallery := models.Gallery{
-		Title: form.Title,
+		Title:  form.Title,
+		UserID: user.ID,
 	}
 	if err := g.gs.Create(&gallery); err != nil {
 		vd.SetAlert(err)
