@@ -1,13 +1,14 @@
 package models
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"golang.org/x/crypto/bcrypt"
 	"gophercise/lenslocked.com/hash"
 	"gophercise/lenslocked.com/rand"
-	"regexp"
-	"strings"
 )
 
 const userPwPepper = "some-secret-random-string"
@@ -142,7 +143,7 @@ func (uv *userValidator) setRememberIfUnset(user *User) error {
 func (uv *userValidator) idGreaterThan(n uint) userValFunc {
 	return userValFunc(func(user *User) error {
 		if user.ID <= n {
-			return ErrIDInvalidId
+			return ErrIDInvalid
 		}
 		return nil
 	})

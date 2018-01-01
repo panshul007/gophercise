@@ -13,7 +13,7 @@ const (
 	ErrPasswordRequired  modelError = "models: password is required"
 	ErrTitleRequired     modelError = "models: title is required"
 
-	ErrIDInvalidId           privateError = "models: ID provided was invalid"
+	ErrIDInvalid             privateError = "models: ID provided was invalid"
 	ErrRememberTokenTooShort privateError = "models: remember token should be at least 32 bytes"
 	ErrRememberTokenRequired privateError = "models: remember token is required"
 	ErrUserIDRequired        privateError = "models: user ID is required"
