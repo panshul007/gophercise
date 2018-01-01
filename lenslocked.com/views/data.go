@@ -1,5 +1,7 @@
 package views
 
+import "gophercise/lenslocked.com/models"
+
 const (
 	AlertLevelError   = "danger"
 	AlertLevelWarning = "warning"
@@ -18,6 +20,7 @@ type Alert struct {
 // Data is the top level structure that views expect data to be passed in.
 type Data struct {
 	Alert *Alert
+	User  *models.User
 	Yield interface{}
 }
 

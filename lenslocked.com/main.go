@@ -33,7 +33,8 @@ func main() {
 	usersC := controllers.NewUsers(services.User)
 	galleriesC := controllers.NewGalleries(services.Gallery, r)
 
-	requireUserMw := middleware.RequireUser{UserService: services.User}
+	userMw := middleware.User{UserService: services.User}
+	requireUserMw := middleware.RequireUser{User: userMw}
 
 	r.Handle("/", staticC.Home).Methods("GET")
 	r.Handle("/contact", staticC.Contact).Methods("GET")
@@ -43,7 +44,7 @@ func main() {
 	r.Handle("/login", usersC.LoginView).Methods("GET")
 	// Using HandleFunc when a method reference is passed
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
-	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
+	//r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
 
 	// Gallery routes
 	r.Handle("/galleries/new", requireUserMw.Apply(galleriesC.New)).Methods("GET")
@@ -55,7 +56,9 @@ func main() {
 	r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET").Name(controllers.ShowGallery)
 
 	fmt.Println("Starting the server at port: 3000...")
-	http.ListenAndServe(":3000", r)
+
+	// To apply the user middleware to all requests received.
+	http.ListenAndServe(":3000", userMw.Apply(r))
 }
 
 func must(err error) {
