@@ -19,3 +19,6 @@
 
 # dep dependency files
 lenslocked.com/vendor
+
+# images folder
+lenslocked.com/images/**
