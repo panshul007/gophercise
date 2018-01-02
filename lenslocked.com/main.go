@@ -5,10 +5,12 @@ import (
 
 	"fmt"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"gophercise/lenslocked.com/controllers"
 	"gophercise/lenslocked.com/middleware"
 	"gophercise/lenslocked.com/models"
+	"gophercise/lenslocked.com/rand"
 )
 
 const (
@@ -33,6 +35,11 @@ func main() {
 	usersC := controllers.NewUsers(services.User)
 	galleriesC := controllers.NewGalleries(services.Gallery, services.Image, r)
 
+	// TODO: update this to be configurable
+	isProd := false
+	b, err := rand.Bytes(32)
+	must(err)
+	csrfMw := csrf.Protect(b, csrf.Secure(isProd))
 	userMw := middleware.User{UserService: services.User}
 	requireUserMw := middleware.RequireUser{User: userMw}
 
@@ -69,7 +76,7 @@ func main() {
 	fmt.Println("Starting the server at port: 3000...")
 
 	// To apply the user middleware to all requests received.
-	http.ListenAndServe(":3000", userMw.Apply(r))
+	http.ListenAndServe(":3000", csrfMw(userMw.Apply(r)))
 }
 
 func must(err error) {

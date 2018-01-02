@@ -1,8 +1,9 @@
 package controllers
 
 import (
-	"github.com/gorilla/schema"
 	"net/http"
+
+	"github.com/gorilla/schema"
 )
 
 func parseForm(r *http.Request, dst interface{}) error {
@@ -11,7 +12,9 @@ func parseForm(r *http.Request, dst interface{}) error {
 	}
 
 	dec := schema.NewDecoder()
-	if err := dec.Decode(dst, r.PostForm); err!= nil {
+	// Set to ignore CSRF fields, being submitted with every form.
+	dec.IgnoreUnknownKeys(true)
+	if err := dec.Decode(dst, r.PostForm); err != nil {
 		return err
 	}
 	return nil
