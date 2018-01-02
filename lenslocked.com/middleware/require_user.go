@@ -3,6 +3,8 @@ package middleware
 import (
 	"net/http"
 
+	"strings"
+
 	"gophercise/lenslocked.com/context"
 	"gophercise/lenslocked.com/models"
 )
@@ -17,6 +19,15 @@ func (u *User) Apply(next http.Handler) http.HandlerFunc {
 
 func (u *User) ApplyFn(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// User lookup not required for static pages and public assets.
+		path := r.URL.Path
+		if strings.HasPrefix(path, "/assets/") ||
+			strings.HasPrefix(path, "/images/") {
+			next(w, r)
+			return
+		}
+
 		cookie, err := r.Cookie("remember_token")
 		if err != nil {
 			next(w, r)
