@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"io"
+	"net/url"
 	"path/filepath"
 	"strings"
 )
@@ -19,7 +20,10 @@ func (i *Image) String() string {
 }
 
 func (i *Image) Path() string {
-	return "/" + i.RelativePath()
+	temp := url.URL{
+		Path: "/" + i.RelativePath(),
+	}
+	return temp.String()
 }
 
 func (i *Image) RelativePath() string {
