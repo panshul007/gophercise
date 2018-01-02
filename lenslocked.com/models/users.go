@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"golang.org/x/crypto/bcrypt"
 	"gophercise/lenslocked.com/hash"
 	"gophercise/lenslocked.com/rand"
 )
 
+// TODO: config this
 const userPwPepper = "some-secret-random-string"
 const hmacSecretKey = "secret-random-hmac-key"
 

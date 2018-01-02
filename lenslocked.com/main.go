@@ -13,17 +13,10 @@ import (
 	"gophercise/lenslocked.com/rand"
 )
 
-const (
-	host   = "localhost"
-	port   = 5432
-	user   = "postgres"
-	dbname = "lenslocked_dev"
-)
-
 func main() {
-
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable", host, port, user, dbname)
-	services, err := models.NewServices(psqlInfo)
+	config := DefaultConfig()
+	dbConfig := DefaultPostgresConfig()
+	services, err := models.NewServices(dbConfig.Dialect(), dbConfig.ConnectionInfo())
 	must(err)
 
 	defer services.Close()
@@ -35,11 +28,9 @@ func main() {
 	usersC := controllers.NewUsers(services.User)
 	galleriesC := controllers.NewGalleries(services.Gallery, services.Image, r)
 
-	// TODO: update this to be configurable
-	isProd := false
 	b, err := rand.Bytes(32)
 	must(err)
-	csrfMw := csrf.Protect(b, csrf.Secure(isProd))
+	csrfMw := csrf.Protect(b, csrf.Secure(config.IsProd()))
 	userMw := middleware.User{UserService: services.User}
 	requireUserMw := middleware.RequireUser{User: userMw}
 
@@ -73,10 +64,9 @@ func main() {
 	r.HandleFunc("/galleries/{id:[0-9]+}/images/{filename}/delete", requireUserMw.ApplyFn(galleriesC.ImageDelete)).Methods("POST")
 	r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET").Name(controllers.ShowGallery)
 
-	fmt.Println("Starting the server at port: 3000...")
-
+	fmt.Printf("Starting the server at port :%d...\n", config.Port)
 	// To apply the user middleware to all requests received.
-	http.ListenAndServe(":3000", csrfMw(userMw.Apply(r)))
+	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), csrfMw(userMw.Apply(r)))
 }
 
 func must(err error) {
