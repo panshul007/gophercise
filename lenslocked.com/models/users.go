@@ -10,10 +10,6 @@ import (
 	"gophercise/lenslocked.com/rand"
 )
 
-// TODO: config this
-const userPwPepper = "some-secret-random-string"
-const hmacSecretKey = "secret-random-hmac-key"
-
 type User struct {
 	gorm.Model
 	Name         string
@@ -40,15 +36,17 @@ type userValidator struct {
 	UserDB
 	hmac       hash.HMAC
 	emailRegex *regexp.Regexp
+	pepper     string
 }
 
 var _ UserDB = &userValidator{}
 
-func newUserValidator(udb UserDB, hmac hash.HMAC) *userValidator {
+func newUserValidator(udb UserDB, hmac hash.HMAC, pepper string) *userValidator {
 	return &userValidator{
 		UserDB:     udb,
 		hmac:       hmac,
 		emailRegex: regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`),
+		pepper:     pepper,
 	}
 }
 
@@ -108,7 +106,7 @@ func (uv *userValidator) bcryptPassword(user *User) error {
 	if user.Password == "" {
 		return nil
 	}
-	pwByte := []byte(user.Password + userPwPepper)
+	pwByte := []byte(user.Password + uv.pepper)
 	hashedBytes, err := bcrypt.GenerateFromPassword(pwByte, bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -241,16 +239,18 @@ type UserService interface {
 
 type userService struct {
 	UserDB
+	pepper string
 }
 
-func NewUserService(db *gorm.DB) UserService {
+func NewUserService(db *gorm.DB, pepper, hmacKey string) UserService {
 	ug := &userGorm{db}
-	hmac := hash.NewHMAC(hmacSecretKey)
-	uv := newUserValidator(ug, hmac)
+	hmac := hash.NewHMAC(hmacKey)
+	uv := newUserValidator(ug, hmac, pepper)
 	// Returns an instance of UserService which calls its methods from UserDB which si actually an instance of
 	// userValidator, which in turn calls its methods of UserDB which is actually an instance of ug.
 	return &userService{
 		UserDB: uv,
+		pepper: pepper,
 	}
 }
 
@@ -261,7 +261,7 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 		return nil, err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+us.pepper))
 	if err != nil {
 		switch err {
 		case bcrypt.ErrMismatchedHashAndPassword:
