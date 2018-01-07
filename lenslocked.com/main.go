@@ -5,6 +5,8 @@ import (
 
 	"fmt"
 
+	"flag"
+
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"gophercise/lenslocked.com/controllers"
@@ -14,8 +16,12 @@ import (
 )
 
 func main() {
-	config := DefaultConfig()
-	dbConfig := DefaultPostgresConfig()
+
+	boolPtr := flag.Bool("prod", false, "Ensures that a default-config.json file is provided in production.")
+
+	flag.Parse()
+	config := LoadConfig(*boolPtr)
+	dbConfig := config.Database
 	services, err := models.NewServices(
 		models.WithGorm(dbConfig.Dialect(), dbConfig.ConnectionInfo()),
 		models.WithLogMode(!config.IsProd()),
