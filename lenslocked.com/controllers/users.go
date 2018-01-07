@@ -4,6 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	"time"
+
+	"gophercise/lenslocked.com/context"
 	"gophercise/lenslocked.com/models"
 	"gophercise/lenslocked.com/rand"
 	"gophercise/lenslocked.com/views"
@@ -119,6 +122,23 @@ func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
 	}
 	http.SetCookie(w, &cookie)
 	return nil
+}
+
+// POST /logout
+func (u *Users) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie := http.Cookie{
+		Name:     "remember_token",
+		Value:    "",
+		Expires:  time.Now(),
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &cookie)
+
+	user := context.User(r.Context())
+	token, _ := rand.RemeberToken()
+	user.Remember = token
+	u.us.Update(user)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 //// CookieTest is used to display cookies set on the current user.

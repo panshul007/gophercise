@@ -54,6 +54,7 @@ func main() {
 	r.Handle("/login", usersC.LoginView).Methods("GET")
 	// Using HandleFunc when a method reference is passed
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
+	r.HandleFunc("/logout", requireUserMw.ApplyFn(usersC.Logout)).Methods("POST")
 	//r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
 
 	// Assets
