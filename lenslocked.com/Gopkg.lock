@@ -2,68 +2,106 @@
 
 
 [[projects]]
+  digest = "1:20ed7daa9b3b38b6d1d39b48ab3fd31122be5419461470d0c28de3e121c93ecf"
   name = "github.com/gorilla/context"
   packages = ["."]
+  pruneopts = ""
   revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
   version = "v1.1"
 
 [[projects]]
+  digest = "1:ce3eb9f2f1c8bee4b6f60b4dcc71c99c97a0200b1fa0e7e27e7aeda547bd632b"
   name = "github.com/gorilla/csrf"
   packages = ["."]
+  pruneopts = ""
   revision = "69581736821c33d85bbf378f42f6ad864dbd85de"
   version = "v1.5"
 
 [[projects]]
+  digest = "1:a759b98c93c6dab29652eacd70cd7d0e88f02de8bc63051f787329966ec0a0ee"
   name = "github.com/gorilla/mux"
   packages = ["."]
+  pruneopts = ""
   revision = "7f08801859139f86dfafd1c296e2cba9a80d292e"
   version = "v1.6.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:f8533cc2f6958b8b5af1bd5f6dc9b23e8bab904c8bef0aecdb648dae335ece91"
   name = "github.com/gorilla/schema"
   packages = ["."]
+  pruneopts = ""
   revision = "afe77393c53b66afe9212810d9b2013859d04ae6"
 
 [[projects]]
+  digest = "1:1ff3509899d1357b533eefcc4be703aa4b8b690370de9bce65389aad226acf3c"
   name = "github.com/gorilla/securecookie"
   packages = ["."]
+  pruneopts = ""
   revision = "667fe4e3466a040b780561fe9b51a83a3753eefc"
   version = "v1.1"
 
 [[projects]]
   branch = "master"
+  digest = "1:6d773bf0c11a481c97244bf58b6d857c6f6caddf36dc1f19dcf84ba74e290523"
   name = "github.com/jinzhu/gorm"
-  packages = [".","dialects/postgres"]
+  packages = [
+    ".",
+    "dialects/postgres",
+  ]
+  pruneopts = ""
   revision = "0a51f6cdc55d1650d9ed3b4c13026cfa9133b01e"
 
 [[projects]]
   branch = "master"
+  digest = "1:a0c0f06f12f4b83b89eec79114265c54e9e300b8ddda0f0f3fb49a685283fa6c"
   name = "github.com/jinzhu/inflection"
   packages = ["."]
+  pruneopts = ""
   revision = "1c35d901db3da928c72a72d8458480cc9ade058f"
 
 [[projects]]
   branch = "master"
+  digest = "1:3b5167b89f2203a949b71e29783418a0532531238ad36eb8610ec12e9c7b997f"
   name = "github.com/lib/pq"
-  packages = [".","hstore","oid"]
+  packages = [
+    ".",
+    "hstore",
+    "oid",
+  ]
+  pruneopts = ""
   revision = "83612a56d3dd153a94a629cd64925371c9adad78"
 
 [[projects]]
+  digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
   name = "github.com/pkg/errors"
   packages = ["."]
+  pruneopts = ""
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:ff7dea5ad362112e8e360ee0dbfeace7b000e93947ae1f39634e7d41daef15a1"
   name = "golang.org/x/crypto"
-  packages = ["bcrypt","blowfish"]
+  packages = [
+    "bcrypt",
+    "blowfish",
+  ]
+  pruneopts = ""
   revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9757b4f9023da50d1684719d35bc8c404f2f5d9b6062db58582983809b83ce94"
+  input-imports = [
+    "github.com/gorilla/csrf",
+    "github.com/gorilla/mux",
+    "github.com/gorilla/schema",
+    "github.com/jinzhu/gorm",
+    "github.com/jinzhu/gorm/dialects/postgres",
+    "github.com/lib/pq",
+    "golang.org/x/crypto/bcrypt",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
